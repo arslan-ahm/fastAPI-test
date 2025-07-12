@@ -2,13 +2,13 @@
 
 import base64
 import json
+import requests
 from typing import List, Optional
 from PIL import Image
 import io
-import openai
 
 from ..core.config import settings
-from ..core.exceptions import ImageProcessingError, RecipeGenerationError, OpenAIKeyMissingError
+from ..core.exceptions import ImageProcessingError, RecipeGenerationError
 from ..models.schemas import Recipe, RecipeRequest, DietType, CountryStyle
 
 
@@ -20,15 +20,69 @@ class LLM7Service:
         if not settings.llm7_token:
             raise Exception("LLM7 token is not configured. Please set LLM7_TOKEN environment variable.")
             
-        # Initialize OpenAI client with LLM7 configuration
+        # Store configuration for HTTP requests
+        self.api_key = settings.llm7_token
+        self.base_url = settings.llm7_base_url
+        self.text_model = settings.llm7_text_model
+        self.image_model = settings.llm7_image_model
+        
+        # Set up headers for API requests
+        self.headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json"
+        }
+        
+        # Test connection
         try:
-            # Simple initialization to avoid parameter conflicts
-            self.client = openai.OpenAI(
-                api_key=settings.llm7_token,
-                base_url=settings.llm7_base_url
-            )
+            self._test_connection()
         except Exception as e:
-            raise Exception(f"Failed to initialize LLM7 client: {str(e)}")
+            raise Exception(f"Failed to connect to LLM7 API: {str(e)}")
+    
+    def _test_connection(self):
+        """Test the connection to LLM7 API."""
+        try:
+            # Simple test request to verify API is accessible
+            response = requests.get(
+                f"{self.base_url}/models",
+                headers=self.headers,
+                timeout=10
+            )
+            if response.status_code == 401:
+                raise Exception("Invalid LLM7 token")
+            elif response.status_code != 200:
+                raise Exception(f"API connection failed with status {response.status_code}")
+        except requests.exceptions.RequestException as e:
+            raise Exception(f"Network error connecting to LLM7 API: {str(e)}")
+    
+    def _make_chat_request(self, messages: List[dict], model: str, max_tokens: int = 1500, temperature: float = 0.7) -> dict:
+        """Make a chat completion request to LLM7 API."""
+        payload = {
+            "model": model,
+            "messages": messages,
+            "max_tokens": max_tokens,
+            "temperature": temperature
+        }
+        
+        try:
+            response = requests.post(
+                f"{self.base_url}/chat/completions",
+                headers=self.headers,
+                json=payload,
+                timeout=60
+            )
+            
+            if response.status_code != 200:
+                error_detail = response.text
+                if response.status_code == 401:
+                    raise Exception("Invalid LLM7 token")
+                elif response.status_code == 429:
+                    raise Exception("LLM7 API rate limit exceeded")
+                else:
+                    raise Exception(f"LLM7 API error ({response.status_code}): {error_detail}")
+            
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            raise Exception(f"Network error calling LLM7 API: {str(e)}")
     
     async def extract_ingredients_and_generate_recipe(
         self, 
@@ -57,28 +111,25 @@ class LLM7Service:
             prompt = self._create_image_analysis_prompt(style, diet, people)
             
             # Generate recipe using LLM7 vision model
-            response = self.client.chat.completions.create(
-                model=settings.llm7_image_model,
-                messages=[
-                    {
-                        "role": "user",
-                        "content": [
-                            {"type": "text", "text": prompt},
-                            {
-                                "type": "image_url",
-                                "image_url": {
-                                    "url": f"data:image/jpeg;base64,{image_base64}"
-                                }
+            messages = [
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": prompt},
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/jpeg;base64,{image_base64}"
                             }
-                        ]
-                    }
-                ],
-                max_tokens=1500,
-                temperature=0.7
-            )
+                        }
+                    ]
+                }
+            ]
+            
+            response = self._make_chat_request(messages, self.image_model, max_tokens=1500, temperature=0.7)
             
             # Parse the response
-            recipe_data = self._parse_recipe_response(response.choices[0].message.content)
+            recipe_data = self._parse_recipe_response(response['choices'][0]['message']['content'])
             
             return Recipe(**recipe_data)
             
@@ -100,18 +151,15 @@ class LLM7Service:
             prompt = self._create_text_recipe_prompt(request)
             
             # Generate the recipe using LLM7's text model
-            response = self.client.chat.completions.create(
-                model=settings.llm7_text_model,
-                messages=[
-                    {"role": "system", "content": "You are a professional chef and recipe expert. Always respond with valid JSON in the exact format requested."},
-                    {"role": "user", "content": prompt}
-                ],
-                max_tokens=1500,
-                temperature=0.7
-            )
+            messages = [
+                {"role": "system", "content": "You are a professional chef and recipe expert. Always respond with valid JSON in the exact format requested."},
+                {"role": "user", "content": prompt}
+            ]
+            
+            response = self._make_chat_request(messages, self.text_model, max_tokens=1500, temperature=0.7)
             
             # Parse the response
-            recipe_data = self._parse_recipe_response(response.choices[0].message.content)
+            recipe_data = self._parse_recipe_response(response['choices'][0]['message']['content'])
             
             return Recipe(**recipe_data)
             
