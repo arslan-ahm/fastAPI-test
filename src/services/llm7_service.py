@@ -18,13 +18,17 @@ class LLM7Service:
     def __init__(self):
         """Initialize the LLM7 service."""
         if not settings.llm7_token:
-            raise OpenAIKeyMissingError("LLM7 token is not configured. Please set LLM7_TOKEN environment variable.")
+            raise Exception("LLM7 token is not configured. Please set LLM7_TOKEN environment variable.")
             
         # Initialize OpenAI client with LLM7 configuration
-        self.client = openai.OpenAI(
-            base_url=settings.llm7_base_url,
-            api_key=settings.llm7_token
-        )
+        try:
+            # Simple initialization to avoid parameter conflicts
+            self.client = openai.OpenAI(
+                api_key=settings.llm7_token,
+                base_url=settings.llm7_base_url
+            )
+        except Exception as e:
+            raise Exception(f"Failed to initialize LLM7 client: {str(e)}")
     
     async def extract_ingredients_and_generate_recipe(
         self, 

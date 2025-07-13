@@ -19,10 +19,10 @@ class RecipeAPIException(HTTPException):
 class OpenAIKeyMissingError(RecipeAPIException):
     """Raised when OpenAI API key is missing."""
     
-    def __init__(self) -> None:
+    def __init__(self, message: str = "OpenAI API key is not configured. Please set OPENAI_API_KEY environment variable.") -> None:
         super().__init__(
             status_code=500,
-            detail="OpenAI API key is not configured. Please set OPENAI_API_KEY environment variable."
+            detail=message
         )
 
 
