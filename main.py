@@ -68,4 +68,4 @@ async def global_exception_handler(request, exc):
     )
 
 # Export for Vercel
-handler = app
+app = app
