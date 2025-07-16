@@ -20,10 +20,5 @@
     "API_HOST": "0.0.0.0",
     "API_PORT": "8000"
   },
-  "functions": {
-    "api/index.py": {
-      "maxDuration": 60
-    }
-  },
   "regions": ["iad1"]
 }
