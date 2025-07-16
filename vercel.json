@@ -5,7 +5,8 @@
       "src": "api/index.py",
       "use": "@vercel/python",
       "config": {
-        "maxLambdaSize": "50mb"
+        "maxLambdaSize": "50mb",
+        "runtime": "python3.9"
       }
     }
   ],
@@ -19,6 +20,5 @@
     "PYTHONPATH": ".",
     "API_HOST": "0.0.0.0",
     "API_PORT": "8000"
-  },
-  "regions": ["iad1"]
+  }
 }

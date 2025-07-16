@@ -5,7 +5,14 @@ import json
 from typing import List, Optional
 from PIL import Image
 import io
-import google.generativeai as genai
+
+# Optional import for Google Generative AI
+try:
+    import google.generativeai as genai
+    GENAI_AVAILABLE = True
+except ImportError:
+    genai = None
+    GENAI_AVAILABLE = False
 
 from ..core.config import settings
 from ..core.exceptions import ImageProcessingError, RecipeGenerationError, OpenAIKeyMissingError
@@ -17,6 +24,9 @@ class GeminiService:
     
     def __init__(self):
         """Initialize the Gemini service."""
+        if not GENAI_AVAILABLE:
+            raise ImportError("google.generativeai is not installed")
+            
         if not settings.gemini_api_key:
             raise OpenAIKeyMissingError("Gemini API key is not configured. Please set GEMINI_API_KEY environment variable.")
             
