@@ -1,0 +1,24 @@
+# Vercel ignore file
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.venv/
+venv/
+.env
+.env.example
+.git/
+.gitignore
+README.md
+*.log
+test_*
+tests/
+.pytest_cache/
+.coverage
+.mypy_cache/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
