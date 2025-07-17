@@ -2,7 +2,6 @@
 Recipe API - FastAPI application for generating recipes using LLM7.
 """
 
-import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -35,7 +34,7 @@ app.add_middleware(
 )
 
 # Include routers
-app.include_router(recipes_router)
+app.include_router(recipes_router, prefix="/api/recipes")
 
 @app.get("/", response_model=HealthResponse)
 async def root():
@@ -68,15 +67,5 @@ async def global_exception_handler(request, exc):
         }
     )
 
-# Vercel handler function
+# Export for Vercel
 handler = app
-
-if __name__ == "__main__":
-    logger.info("Starting Recipe API server...")
-    uvicorn.run(
-        "main:app",
-        host=settings.api_host,
-        port=settings.api_port,
-        reload=settings.debug,
-        log_level="info"
-    )

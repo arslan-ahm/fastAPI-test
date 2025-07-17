@@ -34,7 +34,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Create router
-router = APIRouter(prefix="/api/recipes", tags=["recipes"])
+router = APIRouter(tags=["recipes"])
 
 
 @router.get("/health")

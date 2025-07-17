@@ -2,21 +2,14 @@
   "version": 2,
   "builds": [
     {
-      "src": "./main.py",
-      "use": "@vercel/python",
-      "config": {
-        "maxLambdaSize": "50mb",
-        "runtime": "python3.9"
-      }
+      "src": "main.py",
+      "use": "@vercel/python"
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "./main.py"
+      "dest": "main.py"
     }
-  ],
-  "env": {
-    "PYTHONPATH": "$VERCEL_PROJECT_ROOT"
-  }
+  ]
 }
