@@ -68,6 +68,9 @@ async def global_exception_handler(request, exc):
         }
     )
 
+# Vercel handler function
+handler = app
+
 if __name__ == "__main__":
     logger.info("Starting Recipe API server...")
     uvicorn.run(
